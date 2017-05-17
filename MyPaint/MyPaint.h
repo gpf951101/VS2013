@@ -5,3 +5,4 @@
 
 #include "DrawStyle.h"
 #include "ColorBox.h"
+#include "DrawStyleBox.h"

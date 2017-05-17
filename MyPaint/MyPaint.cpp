@@ -39,6 +39,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	LoadString(hInstance, IDC_MYPAINT, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
 	RegisterColorClass(hInstance);//注册自己写的颜色窗口
+	RegisterStyleClass(hInstance);//注冊自己写的类型窗口
+
 	// 执行应用程序初始化: 
 	if (!InitInstance (hInstance, nCmdShow))
 	{
@@ -139,12 +141,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	//调色板
 	static HPEN hPen, hOldPen;
+	static HBRUSH hBrush;
 	static COLORREF color;
 	static INT iWidth;
 	static HWND hWndColor;
 	static BOOL bColorBoxIsDock;
 
+	static HWND hWndStyle;
 	static BOOL bStyleBoxIsDock;
+	static int flag;
 
 	switch (message)
 	{
@@ -239,6 +244,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				Ellipse(hdc, vec[i].pt1.x, vec[i].pt1.y, vec[i].pt2.x, vec[i].pt2.y);
 				ReleaseDC(hWnd, hdc);
 				break;
+			case fillEllipse:
+				hdc = GetDC(hWnd);
+				SetROP2(hdc, R2_COPYPEN);
+				DeleteObject(hOldPen);
+				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
+				hOldPen = hPen;
+				hBrush = CreateSolidBrush(vec[i].color);
+				SelectObject(hdc, hBrush);
+				SelectObject(hdc, hPen);
+				Ellipse(hdc, vec[i].pt1.x, vec[i].pt1.y, vec[i].pt2.x, vec[i].pt2.y);
+				DeleteObject(hBrush);
+				ReleaseDC(hWnd, hdc);
+				break;
+			case fillRect:
+				hdc = GetDC(hWnd);
+				SetROP2(hdc, R2_COPYPEN);
+				DeleteObject(hOldPen);
+				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
+				hOldPen = hPen;
+				hBrush = CreateSolidBrush(vec[i].color);
+				SelectObject(hdc, hPen);
+				SelectObject(hdc, hBrush);
+				Rectangle(hdc, vec[i].pt1.x, vec[i].pt1.y, vec[i].pt2.x, vec[i].pt2.y);
+				DeleteObject(hBrush);
+				ReleaseDC(hWnd, hdc);
+				break;
 			default:
 				break;
 			}
@@ -265,12 +296,54 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		iWidth = 2;
 		hPen = CreatePen(PS_SOLID, iWidth, color);
 		hOldPen = hPen;
+
+		//类型栏
+		bStyleBoxIsDock = FALSE;
+		hWndStyle = CreateStyleBox(hInst, hWnd, bStyleBoxIsDock);
 		break;
 	case WM_CHANGE_COLOR:
 		color = (COLORREF)lParam;
-		DeleteObject(hOldPen);
+		DeleteObject(hOldPen);//此处删除了 pen 所以DrawStyle.cpp中不需要再次删除
 		hPen = CreatePen(PS_SOLID, iWidth, color);
 		hOldPen = hPen;
+		break;
+	case WM_CHANGE_STYLE:
+		flag = (int)lParam;
+		switch (flag)
+		{
+		case IDB_U_PEN:
+			pMouseDown = PenMouseDown;
+			pMouseUp = PenMouseUp;
+			pMouseMove = PenMouseMove;
+			break;
+		case IDB_U_LINE:
+			pMouseDown = LineMouseDown;
+			pMouseUp = LineMouseUp;
+			pMouseMove = LineMouseMove;
+			break;
+		case IDB_UB_CIRCLE:
+			pMouseDown = EllipseMouseDown;
+			pMouseUp = EllipseMouseUp;
+			pMouseMove = EllipseMouseMove;
+			break;
+		case IDB_UB_RECT:
+			pMouseDown = RectMouseDown;
+			pMouseUp = RectMouseUp;
+			pMouseMove = RectMouseMove;
+			break;
+		case IDB_UF_CIRCLE:
+			pMouseDown = FillEllipseMouseDown;
+			pMouseUp = FillEllipseMouseUp;
+			pMouseMove = FillEllipseMouseMove;
+			break;
+		case IDB_UF_RECT:
+			pMouseDown = FillRectMouseDown;
+			pMouseUp = FillRectMouseUp;
+			pMouseMove = FillRectMouseMove;
+			break;
+		default:
+			break;
+		}
 		break;
 	case WM_LBUTTONDOWN:
 		pMouseDown(&ds, hWnd, wParam, lParam, hPen, color);
