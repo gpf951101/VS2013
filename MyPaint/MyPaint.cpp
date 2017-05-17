@@ -3,15 +3,16 @@
 
 #include "stdafx.h"
 #include "MyPaint.h"
-#include "ColorBox.h"
+
+using namespace std;
 
 #define MAX_LOADSTRING 100
+
 
 // 全局变量: 
 HINSTANCE hInst;								// 当前实例
 TCHAR szTitle[MAX_LOADSTRING];					// 标题栏文本
 TCHAR szWindowClass[MAX_LOADSTRING];			// 主窗口类名
-
 
 // 此代码模块中包含的函数的前向声明: 
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -161,7 +162,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			//绘制线条
 		case IDM_DRAW_PEN:
-
 			pMouseDown = PenMouseDown;
 			pMouseUp = PenMouseUp;
 			pMouseMove = PenMouseMove;
@@ -204,7 +204,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-		// TODO:  在此添加任意绘图代码...
+		for (vector<int>::size_type i = 0; i < vec.size(); i++){
+			switch (vec[i].drawType)
+			{
+			case line:
+				hdc = GetDC(hWnd);
+				SetROP2(hdc, R2_COPYPEN);
+				DeleteObject(hOldPen);
+				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
+				
+				hOldPen = hPen;
+				SelectObject(hdc, hPen);
+				MoveToEx(hdc, vec[i].pt1.x,vec[i].pt1.y, NULL);
+				LineTo(hdc, vec[i].pt2.x, vec[i].pt2.y);
+				ReleaseDC(hWnd,hdc);
+				break;
+			case rect:
+				hdc = GetDC(hWnd);
+				SetROP2(hdc, R2_COPYPEN);
+				DeleteObject(hOldPen);
+				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
+				hOldPen = hPen;
+				SelectObject(hdc, hPen);
+				Rectangle(hdc, vec[i].pt1.x, vec[i].pt1.y, vec[i].pt2.x, vec[i].pt2.y);
+				ReleaseDC(hWnd, hdc);
+				break;
+			case ellipse:
+				hdc = GetDC(hWnd);
+				SetROP2(hdc, R2_COPYPEN);
+				DeleteObject(hOldPen);
+				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
+				hOldPen = hPen;
+				SelectObject(hdc, hPen);
+				Ellipse(hdc, vec[i].pt1.x, vec[i].pt1.y, vec[i].pt2.x, vec[i].pt2.y);
+				ReleaseDC(hWnd, hdc);
+				break;
+			default:
+				break;
+			}
+		}
+
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
@@ -222,7 +261,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//调色板
 		bColorBoxIsDock = FALSE;
 		hWndColor = CreateColorBox(hInst, hWnd, bColorBoxIsDock);
-		color = RGB(255, 0, 0);
+		color = RGB(0, 0, 0);
 		iWidth = 2;
 		hPen = CreatePen(PS_SOLID, iWidth, color);
 		hOldPen = hPen;
@@ -234,13 +273,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hOldPen = hPen;
 		break;
 	case WM_LBUTTONDOWN:
-		pMouseDown(&ds, hWnd, wParam, lParam,hPen);
+		pMouseDown(&ds, hWnd, wParam, lParam, hPen, color);
 		break;
 	case WM_LBUTTONUP:
-		pMouseUp(&ds, hWnd, wParam, lParam,hPen);
+		pMouseUp(&ds, hWnd, wParam, lParam, hPen, color);
 		break;
 	case WM_MOUSEMOVE:
-		pMouseMove(&ds, hWnd, wParam, lParam,hPen);
+		pMouseMove(&ds, hWnd, wParam, lParam, hPen, color);
 		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);

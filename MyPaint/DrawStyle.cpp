@@ -2,21 +2,29 @@
 #include "DrawStyle.h"
 #include <windowsx.h>
 
+//÷ÿªÊ
+vector<node> vec;
+node tempNode;
+
 //ªÊÕº
-VOID LineMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID LineMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	HDC hdc = GetDC(hWnd);
-	SetROP2(hdc, R2_NOTXORPEN);
 	SelectObject(hdc, hPen);
 	pDs->ptStart.x = GET_X_LPARAM(lParam);
 	pDs->ptStart.y = GET_Y_LPARAM(lParam);
+
+	tempNode.pt1 = pDs->ptStart;
+	tempNode.color = color;
+	tempNode.drawType = line;
+
 	pDs->ptEnd.x = pDs->ptStart.x;
 	pDs->ptEnd.y = pDs->ptStart.y;
 	pDs->bMouseDown = TRUE;
 	SetCapture(hWnd);
 	ReleaseDC(hWnd, hdc);
 }
-VOID LineMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID LineMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	HDC hdc;
 	pDs->bMouseDown = FALSE;
@@ -32,14 +40,17 @@ VOID LineMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hP
 	MoveToEx(hdc, pDs->ptStart.x, pDs->ptStart.y, NULL);
 	LineTo(hdc, pDs->ptEnd.x, pDs->ptEnd.y);
 	ReleaseDC(hWnd, hdc);
+	
+	tempNode.pt2 = pDs->ptEnd;
+	vec.push_back(tempNode);
 }
-VOID LineMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID LineMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	HDC hdc;
 	if (pDs->bMouseDown)
 	{
 		hdc = GetDC(hWnd);
-		SetROP2(hdc, R2_NOT);
+		SetROP2(hdc, R2_NOTXORPEN);
 		SelectObject(hdc, hPen);
 		MoveToEx(hdc, pDs->ptStart.x, pDs->ptStart.y, NULL);
 		LineTo(hdc, pDs->ptEnd.x, pDs->ptEnd.y);
@@ -51,26 +62,31 @@ VOID LineMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN 
 	}
 }
 
-VOID RectMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID RectMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	HDC hdc = GetDC(hWnd);
-	SetROP2(hdc, R2_NOTXORPEN);
 	SelectObject(hdc, hPen);
+	
 	pDs->ptStart.x = GET_X_LPARAM(lParam);
 	pDs->ptStart.y = GET_Y_LPARAM(lParam);
+
+	tempNode.pt1 = pDs->ptStart;
+	tempNode.color = color;
+	tempNode.drawType = rect;
+
 	pDs->ptEnd.x = pDs->ptStart.x;
 	pDs->ptEnd.y = pDs->ptStart.y;
 	pDs->bMouseDown = TRUE;
 	SetCapture(hWnd);
 	ReleaseDC(hWnd, hdc);
 }
-VOID RectMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID RectMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	HDC hdc;
 	if (pDs->bMouseDown)
 	{
 		hdc = GetDC(hWnd);
-		SetROP2(hdc, R2_NOT);
+		SetROP2(hdc, R2_NOTXORPEN);
 		SelectObject(hdc, hPen);
 		Rectangle(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
 		pDs->ptEnd.x = GET_X_LPARAM(lParam);
@@ -79,38 +95,48 @@ VOID RectMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN 
 		ReleaseDC(hWnd, hdc);
 	}
 }
-VOID RectMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID RectMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	HDC hdc;
 	pDs->bMouseDown = FALSE;
 	ReleaseCapture();
 	hdc = GetDC(hWnd);
+	SetROP2(hdc, R2_NOT);
 	SelectObject(hdc, hPen);
+	Rectangle(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
 	pDs->ptEnd.x = GET_X_LPARAM(lParam);
 	pDs->ptEnd.y = GET_Y_LPARAM(lParam);
 	SetROP2(hdc, R2_COPYPEN);
 	Rectangle(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
 	ReleaseDC(hWnd, hdc);
+
+	tempNode.pt2 = pDs->ptEnd;
+	vec.push_back(tempNode);
 }
 
-VOID EllipseMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID EllipseMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	HDC hdc = GetDC(hWnd);
-	SetROP2(hdc, R2_NOTXORPEN);
 	SelectObject(hdc, hPen);
 	pDs->ptStart.x = GET_X_LPARAM(lParam);
 	pDs->ptStart.y = GET_Y_LPARAM(lParam);
+
+	tempNode.pt1 = pDs->ptStart;
+	tempNode.color = color;
+	tempNode.drawType = ellipse;
+
 	pDs->ptEnd.x = pDs->ptStart.x;
 	pDs->ptEnd.y = pDs->ptStart.y;
 	pDs->bMouseDown = TRUE;
 	SetCapture(hWnd);
 	ReleaseDC(hWnd,hdc);
 }
-VOID EllipseMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID EllipseMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	HDC hdc = GetDC(hWnd);
 	SetROP2(hdc, R2_NOTXORPEN);
 	SelectObject(hdc, hPen);
+	Ellipse(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
 	pDs->bMouseDown = FALSE;
 	ReleaseCapture();
 	pDs->ptEnd.x = GET_X_LPARAM(lParam);
@@ -118,14 +144,17 @@ VOID EllipseMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN
 	SetROP2(hdc, R2_COPYPEN);
 	Ellipse(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
 	ReleaseDC(hWnd, hdc);
+
+	tempNode.pt2 = pDs->ptEnd;
+	vec.push_back(tempNode);
 }
-VOID EllipseMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID EllipseMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	if (pDs->bMouseDown)
 	{
 		HDC hdc = GetDC(hWnd);
 		SelectObject(hdc, hPen);
-		SetROP2(hdc, R2_NOT);
+		SetROP2(hdc, R2_NOTXORPEN);
 		Ellipse(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
 		pDs->ptEnd.x = GET_X_LPARAM(lParam);
 		pDs->ptEnd.y = GET_Y_LPARAM(lParam);
@@ -134,38 +163,52 @@ VOID EllipseMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HP
 	}
 }
 
-VOID PenMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID PenMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	HDC hdc = GetDC(hWnd);
-	SetROP2(hdc, R2_NOTXORPEN);
 	SelectObject(hdc, hPen);
 	pDs->ptStart.x = GET_X_LPARAM(lParam);
 	pDs->ptStart.y = GET_Y_LPARAM(lParam);
+
+	tempNode.pt1 = pDs->ptStart;
+	tempNode.color = color;
+	tempNode.drawType = line;
+
 	pDs->ptEnd.x = pDs->ptStart.x;
 	pDs->ptEnd.y = pDs->ptStart.y;
 	pDs->bMouseDown = TRUE;
 	SetCapture(hWnd);
 	ReleaseDC(hWnd, hdc);
 }
-VOID PenMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID PenMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	pDs->bMouseDown = FALSE;
 	ReleaseCapture();
+
+	tempNode.pt2 = pDs->ptEnd;
+	vec.push_back(tempNode);
 }
-VOID PenMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen)
+VOID PenMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color)
 {
 	if (pDs->bMouseDown){
 		HDC hdc;	
 		hdc = GetDC(hWnd);
-		SetROP2(hdc, R2_NOTXORPEN);
 		SelectObject(hdc, hPen);
 		pDs->ptEnd.x = GET_X_LPARAM(lParam);
 		pDs->ptEnd.y = GET_Y_LPARAM(lParam);
-		SetROP2(hdc, R2_COPYPEN);
+
+		tempNode.pt2 = pDs->ptEnd;
+		vec.push_back(tempNode);
+
 		MoveToEx(hdc, pDs->ptStart.x, pDs->ptStart.y, NULL);
 		LineTo(hdc, pDs->ptEnd.x, pDs->ptEnd.y);
 		pDs->ptStart.x = pDs->ptEnd.x;
 		pDs->ptStart.y = pDs->ptEnd.y;
+
+		tempNode.pt1 = pDs->ptStart;
+		tempNode.color = color;
+		tempNode.drawType = line;
+
 		ReleaseDC(hWnd, hdc);
 	}
 }
