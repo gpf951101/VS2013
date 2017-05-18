@@ -3,13 +3,14 @@
 
 static TCHAR szStyleBtnClass[] = TEXT("StyleBtn");
 static TCHAR szStyleBoxClass[] = TEXT("StyleBox");
-int styleId[12] = {
+int styleId[14] = {
 	IDB_U_PEN, IDB_D_PEN,
 	IDB_U_LINE, IDB_D_LINE,
 	IDB_UB_RECT, IDB_DB_RECT,
 	IDB_UB_CIRCLE, IDB_DB_CIRCLE,
 	IDB_UF_RECT, IDB_DF_RECT,
-	IDB_UF_CIRCLE, IDB_DF_CIRCLE
+	IDB_UF_CIRCLE, IDB_DF_CIRCLE,
+	IDB_U_EARSER, IDB_D_EARSER
 };
 static int flag;
 ATOM RegisterStyleClass(HINSTANCE hInstance)
@@ -41,12 +42,11 @@ ATOM RegisterStyleClass(HINSTANCE hInstance)
 		return 0;
 	return 1;
 }
-static BOOL isDown[6] = { TRUE, FALSE, FALSE, FALSE, FALSE, FALSE };
+static BOOL isDown[7] = { TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,FALSE };
 LRESULT CALLBACK WndStyleBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT ps;
 	HDC hdc;
-	RECT rt;
 	static HBITMAP hBitmap1, hBitmap2;
 	static HDC hDcMem;
 	static HWND hWndSendTo;
@@ -60,7 +60,7 @@ LRESULT CALLBACK WndStyleBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 		hdc = BeginPaint(hWnd, &ps);
 		flag = (int)GetWindowLong(hWnd, 0);
 		int temp;
-		for (int i = 0; i < 12; i++){
+		for (int i = 0; i < 14; i++){
 			if (flag == styleId[i]){
 				temp = i / 2;
 				break;
@@ -85,14 +85,14 @@ LRESULT CALLBACK WndStyleBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 		SendMessage(GetParent(hWnd),
 			WM_CHANGE_STYLE, (WPARAM)0, (LPARAM)flag);
 		int temp2;
-		for (int i = 0; i < 12; i++){
+		for (int i = 0; i < 14; i++){
 			if (flag == styleId[i]){
 				temp2 = i / 2;
 				isDown[temp2] = TRUE;
 				break;
 			}
 		}
-		for (int i = 0; i < 6; i++){
+		for (int i = 0; i < 7; i++){
 			if (i != temp2)
 				isDown[i] = FALSE;
 		}
@@ -119,7 +119,7 @@ LRESULT CALLBACK WndStyleBoxProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			->lpCreateParams);
 		HINSTANCE hInsthWnd;
 		hInsthWnd = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
-		for (i = 0; i < 12; i = i+2)
+		for (i = 0; i < 14; i = i+2)
 		{
 			hWndStyle = CreateWindow(szStyleBtnClass, NULL,
 				WS_CHILD, 0, 14 * i, 28, 28, hWnd, NULL, hInsthWnd, (LPVOID)styleId[i]);
@@ -147,7 +147,7 @@ HWND CreateStyleBox(HINSTANCE hInst, HWND hWnd, BOOL isDock)
 	HWND hWndColorBox;
 	if (isDock)
 	{
-		SetRect(&rt, 0, 0, 28, 168);
+		SetRect(&rt, 0, 80, 28, 276);
 		AdjustWindowRect(&rt, WS_CHILD | WS_VISIBLE | WS_BORDER, false);
 		hWndColorBox =
 			CreateWindow(szStyleBoxClass,
@@ -160,7 +160,7 @@ HWND CreateStyleBox(HINSTANCE hInst, HWND hWnd, BOOL isDock)
 	{
 
 		pt1.x = 100, pt1.y = 100;
-		pt2.x = 128, pt2.y = 268;
+		pt2.x = 128, pt2.y = 296;
 		ClientToScreen(hWnd, &pt1);
 		ClientToScreen(hWnd, &pt2);
 

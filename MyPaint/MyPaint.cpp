@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "MyPaint.h"
+#include "atlstr.h"
 
 using namespace std;
 
@@ -14,11 +15,14 @@ HINSTANCE hInst;								// 当前实例
 TCHAR szTitle[MAX_LOADSTRING];					// 标题栏文本
 TCHAR szWindowClass[MAX_LOADSTRING];			// 主窗口类名
 
+static int iWidth = 2;//线条宽度
+
 // 此代码模块中包含的函数的前向声明: 
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK DlgProcIwidthInfo(HWND, UINT, WPARAM, LPARAM);
 
 
 
@@ -143,13 +147,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static HPEN hPen, hOldPen;
 	static HBRUSH hBrush;
 	static COLORREF color;
-	static INT iWidth;
 	static HWND hWndColor;
 	static BOOL bColorBoxIsDock;
 
 	static HWND hWndStyle;
 	static BOOL bStyleBoxIsDock;
 	static int flag;
+
+	int tempIwidth = 0;
+	HPEN tempHpen;
 
 	switch (message)
 	{
@@ -202,6 +208,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			CheckMenuItem(hMenu, IDM_DRAW_RECT, MF_BYCOMMAND | MF_UNCHECKED);
 			CheckMenuItem(hMenu, IDM_DRAW_ELLIPSE, MF_BYCOMMAND | MF_CHECKED);
 			break;
+		case IDM_IWIDTH:
+			DialogBox(hInst, (LPCTSTR)IDD_DIALOG_LINEWIDTH, hWnd, (DLGPROC)DlgProcIwidthInfo);
+			DeleteObject(hOldPen);//此处删除了 pen 所以DrawStyle.cpp中不需要再次删除
+			hPen = CreatePen(PS_SOLID, iWidth, color);
+			InvalidateRect(hWnd, NULL, TRUE);
+			break;
+		case IDM_COLORBOX_ISDOCK:
+			bColorBoxIsDock = TRUE;
+			CheckMenuItem(hMenu, IDM_COLORBOX_ISDOCK, MF_BYCOMMAND | MF_CHECKED);
+			CheckMenuItem(hMenu, IDM_COLORBOX_NOTDOCK, MF_BYCOMMAND | MF_UNCHECKED);
+			DestroyWindow(hWndColor);
+			hWndColor = CreateColorBox(hInst, hWnd, bColorBoxIsDock);
+			break;
+		case IDM_COLORBOX_NOTDOCK:
+			bColorBoxIsDock = FALSE;
+			CheckMenuItem(hMenu, IDM_COLORBOX_ISDOCK, MF_BYCOMMAND | MF_UNCHECKED);
+			CheckMenuItem(hMenu, IDM_COLORBOX_NOTDOCK, MF_BYCOMMAND | MF_CHECKED);
+			DestroyWindow(hWndColor);
+			hWndColor = CreateColorBox(hInst, hWnd, bColorBoxIsDock);
+			break;
+		case IDM_TOOLBOX_ISDOCK:
+			bStyleBoxIsDock = TRUE;
+			CheckMenuItem(hMenu, IDM_TOOLBOX_ISDOCK, MF_BYCOMMAND | MF_CHECKED);
+			CheckMenuItem(hMenu, IDM_TOOLBOX_NOTDOCK, MF_BYCOMMAND | MF_UNCHECKED);
+			DestroyWindow(hWndStyle);
+			hWndStyle = CreateStyleBox(hInst, hWnd, bStyleBoxIsDock);
+			break;
+		case IDM_TOOLBOX_NOTDOCK:
+			bStyleBoxIsDock = FALSE;
+			CheckMenuItem(hMenu, IDM_TOOLBOX_ISDOCK, MF_BYCOMMAND | MF_UNCHECKED);
+			CheckMenuItem(hMenu, IDM_TOOLBOX_NOTDOCK, MF_BYCOMMAND | MF_CHECKED);
+			DestroyWindow(hWndStyle);
+			hWndStyle = CreateStyleBox(hInst, hWnd, bStyleBoxIsDock);
+			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
@@ -209,6 +249,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
+
 		for (vector<int>::size_type i = 0; i < vec.size(); i++){
 			switch (vec[i].drawType)
 			{
@@ -216,10 +257,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				hdc = GetDC(hWnd);
 				SetROP2(hdc, R2_COPYPEN);
 				DeleteObject(hOldPen);
-				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
+				tempIwidth = vec[i].iwidth;
+				tempHpen = CreatePen(PS_SOLID, tempIwidth, vec[i].color);
 				
-				hOldPen = hPen;
-				SelectObject(hdc, hPen);
+				hOldPen = tempHpen;
+				SelectObject(hdc, tempHpen);
 				MoveToEx(hdc, vec[i].pt1.x,vec[i].pt1.y, NULL);
 				LineTo(hdc, vec[i].pt2.x, vec[i].pt2.y);
 				ReleaseDC(hWnd,hdc);
@@ -228,31 +270,41 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				hdc = GetDC(hWnd);
 				SetROP2(hdc, R2_COPYPEN);
 				DeleteObject(hOldPen);
-				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
-				hOldPen = hPen;
-				SelectObject(hdc, hPen);
+				tempIwidth = vec[i].iwidth;
+				hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+				SelectObject(hdc, hBrush);
+				tempHpen = CreatePen(PS_SOLID, tempIwidth, vec[i].color);
+				hOldPen = tempHpen;
+				SelectObject(hdc, tempHpen);
 				Rectangle(hdc, vec[i].pt1.x, vec[i].pt1.y, vec[i].pt2.x, vec[i].pt2.y);
+				DeleteObject(hBrush);
 				ReleaseDC(hWnd, hdc);
 				break;
 			case ellipse:
 				hdc = GetDC(hWnd);
 				SetROP2(hdc, R2_COPYPEN);
 				DeleteObject(hOldPen);
-				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
-				hOldPen = hPen;
-				SelectObject(hdc, hPen);
+				tempIwidth = vec[i].iwidth;
+				hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+				SelectObject(hdc, hBrush);
+				tempHpen = CreatePen(PS_SOLID, tempIwidth, vec[i].color);
+				hOldPen = tempHpen;
+				SelectObject(hdc, tempHpen);
 				Ellipse(hdc, vec[i].pt1.x, vec[i].pt1.y, vec[i].pt2.x, vec[i].pt2.y);
+				DeleteObject(hBrush);
 				ReleaseDC(hWnd, hdc);
 				break;
 			case fillEllipse:
 				hdc = GetDC(hWnd);
 				SetROP2(hdc, R2_COPYPEN);
 				DeleteObject(hOldPen);
-				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
-				hOldPen = hPen;
+				tempIwidth = vec[i].iwidth;
+
+				tempHpen = CreatePen(PS_SOLID, tempIwidth, vec[i].color);
+				hOldPen = tempHpen;
 				hBrush = CreateSolidBrush(vec[i].color);
 				SelectObject(hdc, hBrush);
-				SelectObject(hdc, hPen);
+				SelectObject(hdc, tempHpen);
 				Ellipse(hdc, vec[i].pt1.x, vec[i].pt1.y, vec[i].pt2.x, vec[i].pt2.y);
 				DeleteObject(hBrush);
 				ReleaseDC(hWnd, hdc);
@@ -261,20 +313,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				hdc = GetDC(hWnd);
 				SetROP2(hdc, R2_COPYPEN);
 				DeleteObject(hOldPen);
-				hPen = CreatePen(PS_SOLID, iWidth, vec[i].color);
-				hOldPen = hPen;
+				tempIwidth = vec[i].iwidth;
+
+				tempHpen = CreatePen(PS_SOLID, tempIwidth, vec[i].color);
+				hOldPen = tempHpen;
 				hBrush = CreateSolidBrush(vec[i].color);
-				SelectObject(hdc, hPen);
+				SelectObject(hdc, tempHpen);
 				SelectObject(hdc, hBrush);
 				Rectangle(hdc, vec[i].pt1.x, vec[i].pt1.y, vec[i].pt2.x, vec[i].pt2.y);
 				DeleteObject(hBrush);
+				ReleaseDC(hWnd, hdc);
+				break;
+			case earser:
+				hdc = GetDC(hWnd);
+				DeleteObject(hOldPen);
+				tempIwidth = vec[i].iwidth;
+				tempHpen = CreatePen(PS_SOLID, tempIwidth, RGB(255,255,255));
+
+				hOldPen = tempHpen;
+				SelectObject(hdc, tempHpen);
+				MoveToEx(hdc, vec[i].pt1.x, vec[i].pt1.y, NULL);
+				LineTo(hdc, vec[i].pt2.x, vec[i].pt2.y);
 				ReleaseDC(hWnd, hdc);
 				break;
 			default:
 				break;
 			}
 		}
-
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
@@ -289,11 +354,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CheckMenuItem(hMenu, IDM_DRAW_RECT, MF_BYCOMMAND | MF_UNCHECKED);
 		CheckMenuItem(hMenu, IDM_DRAW_ELLIPSE, MF_BYCOMMAND | MF_UNCHECKED);
 
+		CheckMenuItem(hMenu, IDM_COLORBOX_ISDOCK, MF_BYCOMMAND | MF_UNCHECKED);
+		CheckMenuItem(hMenu, IDM_COLORBOX_NOTDOCK, MF_BYCOMMAND | MF_CHECKED);
+		CheckMenuItem(hMenu, IDM_TOOLBOX_ISDOCK, MF_BYCOMMAND | MF_UNCHECKED);
+		CheckMenuItem(hMenu, IDM_TOOLBOX_NOTDOCK, MF_BYCOMMAND | MF_CHECKED);
 		//调色板
 		bColorBoxIsDock = FALSE;
 		hWndColor = CreateColorBox(hInst, hWnd, bColorBoxIsDock);
 		color = RGB(0, 0, 0);
-		iWidth = 2;
 		hPen = CreatePen(PS_SOLID, iWidth, color);
 		hOldPen = hPen;
 
@@ -341,18 +409,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pMouseUp = FillRectMouseUp;
 			pMouseMove = FillRectMouseMove;
 			break;
+		case IDB_U_EARSER:
+			pMouseDown = EarserMouseDown;
+			pMouseUp = EarserMouseUp;
+			pMouseMove = EarserMouseMove;
+			break;
 		default:
 			break;
 		}
 		break;
 	case WM_LBUTTONDOWN:
-		pMouseDown(&ds, hWnd, wParam, lParam, hPen, color);
+		pMouseDown(&ds, hWnd, wParam, lParam, hPen, color,iWidth);
 		break;
 	case WM_LBUTTONUP:
-		pMouseUp(&ds, hWnd, wParam, lParam, hPen, color);
+		pMouseUp(&ds, hWnd, wParam, lParam, hPen, color, iWidth);
 		break;
 	case WM_MOUSEMOVE:
-		pMouseMove(&ds, hWnd, wParam, lParam, hPen, color);
+		pMouseMove(&ds, hWnd, wParam, lParam, hPen, color, iWidth);
 		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -378,5 +451,42 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	return (INT_PTR)FALSE;
+}
+
+// 线条宽度框
+LRESULT CALLBACK DlgProcIwidthInfo(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	TCHAR szIWidth[50] = TEXT("");
+	char* chRtn = "";
+	char a[50] = "";
+	int iLen = 0;
+	USES_CONVERSION;
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		_itoa(iWidth, a, 10);
+		_tcscpy(szIWidth, A2T(a));
+		SetDlgItemText(hDlg, IDC_LINEWIDTH, szIWidth);
+
+		return TRUE;
+
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_OK:
+			GetDlgItemText(hDlg, IDC_LINEWIDTH, szIWidth, 20);
+			iLen = 2 * wcslen(szIWidth);//CString,TCHAR汉字算一个字符，因此不用普通计算长度 
+			chRtn = new char[iLen + 1];
+			wcstombs(chRtn, szIWidth, iLen + 1);//转换成功返回为非负值 
+			iWidth = atoi(chRtn);
+				EndDialog(hDlg, 1);
+			break;
+		case IDC_CANCEL:
+			EndDialog(hDlg, 0);
+			break;
+		}
+		break;
+	}
+	return FALSE;
 }
 
