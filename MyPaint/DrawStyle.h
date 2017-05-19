@@ -8,6 +8,10 @@ typedef struct tagDrawStru
 {
 	POINT ptStart, ptEnd;
 	BOOL bMouseDown;
+	HBITMAP hBitmap;
+	HDC hMemDc;
+	int iWidth;
+	int iHeight;
 } DRAWSTRU, *PDRAWSTRU;
 typedef VOID(*PDRAWFUN)(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth);
 

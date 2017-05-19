@@ -40,6 +40,11 @@ VOID LineMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hP
 	LineTo(hdc, pDs->ptEnd.x, pDs->ptEnd.y);
 	DeleteObject(newHpen);
 	ReleaseDC(hWnd, hdc);
+
+	SelectObject(pDs->hMemDc, GetStockObject(NULL_BRUSH));
+	SelectObject(pDs->hMemDc, newHpen);
+	MoveToEx(pDs->hMemDc, pDs->ptStart.x, pDs->ptStart.y, NULL);
+	LineTo(pDs->hMemDc, pDs->ptEnd.x, pDs->ptEnd.y);
 	
 	tempNode.pt2 = pDs->ptEnd;
 	vec.push_back(tempNode);
@@ -116,6 +121,10 @@ VOID RectMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hP
 	DeleteObject(hBrush);
 	ReleaseDC(hWnd, hdc);
 
+	SelectObject(pDs->hMemDc, GetStockObject(NULL_BRUSH));
+	SelectObject(pDs->hMemDc, newHpen);
+	Rectangle(pDs->hMemDc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
+
 	tempNode.pt2 = pDs->ptEnd;
 	vec.push_back(tempNode);
 }
@@ -153,6 +162,10 @@ VOID EllipseMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN
 	DeleteObject(newHpen);
 	DeleteObject(hBrush);
 	ReleaseDC(hWnd, hdc);
+
+	SelectObject(pDs->hMemDc, GetStockObject(NULL_BRUSH));
+	SelectObject(pDs->hMemDc, newHpen);
+	Ellipse(pDs->hMemDc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
 
 	tempNode.pt2 = pDs->ptEnd;
 	vec.push_back(tempNode);
@@ -211,6 +224,12 @@ VOID PenMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN h
 
 		MoveToEx(hdc, pDs->ptStart.x, pDs->ptStart.y, NULL);
 		LineTo(hdc, pDs->ptEnd.x, pDs->ptEnd.y);
+
+		SelectObject(pDs->hMemDc, GetStockObject(NULL_BRUSH));
+		SelectObject(pDs->hMemDc, newHpen);
+		MoveToEx(pDs->hMemDc, pDs->ptStart.x, pDs->ptStart.y, NULL);
+		LineTo(pDs->hMemDc, pDs->ptEnd.x, pDs->ptEnd.y);
+
 		pDs->ptStart.x = pDs->ptEnd.x;
 		pDs->ptStart.y = pDs->ptEnd.y;
 
@@ -258,6 +277,11 @@ VOID FillRectMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPE
 	pDs->ptEnd.y = GET_Y_LPARAM(lParam);
 	SetROP2(hdc, R2_COPYPEN);
 	Rectangle(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
+
+	SelectObject(pDs->hMemDc, hBrush);
+	SelectObject(pDs->hMemDc, newHpen);
+	Rectangle(pDs->hMemDc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
+
 	DeleteObject(newHpen);
 	DeleteObject(hBrush);
 	ReleaseDC(hWnd, hdc);
@@ -322,6 +346,11 @@ VOID FillEllipseMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, 
 	pDs->ptEnd.y = GET_Y_LPARAM(lParam);
 	SetROP2(hdc, R2_COPYPEN);
 	Ellipse(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
+
+	SelectObject(pDs->hMemDc, hBrush);
+	SelectObject(pDs->hMemDc, newHpen);
+	Ellipse(pDs->hMemDc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
+
 	DeleteObject(newHpen);
 	DeleteObject(hBrush);
 	ReleaseDC(hWnd, hdc);
@@ -335,7 +364,7 @@ VOID FillEllipseMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam
 	if (pDs->bMouseDown)
 	{
 		hdc = GetDC(hWnd);
-		SetROP2(hdc, R2_NOT);
+		SetROP2(hdc, R2_NOTXORPEN);
 		HBRUSH hBrush = CreateSolidBrush(color);
 		HPEN newHpen = CreatePen(PS_SOLID, iwidth, color);
 		SelectObject(hdc, newHpen);
@@ -377,7 +406,7 @@ VOID EarserMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPE
 	if (pDs->bMouseDown){
 		HDC hdc;
 		hdc = GetDC(hWnd);
-		HPEN newHpen = CreatePen(PS_SOLID, iwidth, color);
+		HPEN newHpen = CreatePen(PS_SOLID, iwidth, RGB(255,255,255));
 		SelectObject(hdc, newHpen);
 		pDs->ptEnd.x = GET_X_LPARAM(lParam);
 		pDs->ptEnd.y = GET_Y_LPARAM(lParam);
@@ -387,6 +416,12 @@ VOID EarserMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPE
 		SetROP2(hdc, R2_WHITE);
 		MoveToEx(hdc, pDs->ptStart.x, pDs->ptStart.y, NULL);
 		LineTo(hdc, pDs->ptEnd.x, pDs->ptEnd.y);
+
+		SelectObject(pDs->hMemDc, GetStockObject(NULL_BRUSH));
+		SelectObject(pDs->hMemDc, newHpen);
+		SetROP2(hdc, R2_WHITE);
+		MoveToEx(pDs->hMemDc, pDs->ptStart.x, pDs->ptStart.y, NULL);
+		LineTo(pDs->hMemDc, pDs->ptEnd.x, pDs->ptEnd.y);
 
 		pDs->ptStart.x = pDs->ptEnd.x;
 		pDs->ptStart.y = pDs->ptEnd.y;

@@ -5,6 +5,9 @@
 #include "MyPaint.h"
 #include "atlstr.h"
 
+//打开保存文件对话框  
+#include<Commdlg.h>  
+
 using namespace std;
 
 #define MAX_LOADSTRING 100
@@ -157,6 +160,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int tempIwidth = 0;
 	HPEN tempHpen;
 
+	//save
+	PBITMAPINFO pbmi;
+	HBITMAP hBitmap = NULL;
+	TCHAR filename[260] = TEXT("");
+	USES_CONVERSION;
 	switch (message)
 	{
 	case WM_COMMAND:
@@ -172,7 +180,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			DestroyWindow(hWnd);
 			break;
 			//绘制线条
-		case IDM_DRAW_PEN:
+		/*case IDM_DRAW_PEN:
 			pMouseDown = PenMouseDown;
 			pMouseUp = PenMouseUp;
 			pMouseMove = PenMouseMove;
@@ -207,7 +215,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			CheckMenuItem(hMenu, IDM_DRAW_LINE, MF_BYCOMMAND | MF_UNCHECKED);
 			CheckMenuItem(hMenu, IDM_DRAW_RECT, MF_BYCOMMAND | MF_UNCHECKED);
 			CheckMenuItem(hMenu, IDM_DRAW_ELLIPSE, MF_BYCOMMAND | MF_CHECKED);
-			break;
+			break;*/
 		case IDM_IWIDTH:
 			DialogBox(hInst, (LPCTSTR)IDD_DIALOG_LINEWIDTH, hWnd, (DLGPROC)DlgProcIwidthInfo);
 			DeleteObject(hOldPen);//此处删除了 pen 所以DrawStyle.cpp中不需要再次删除
@@ -242,6 +250,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			DestroyWindow(hWndStyle);
 			hWndStyle = CreateStyleBox(hInst, hWnd, bStyleBoxIsDock);
 			break;
+		case IDM_SAVEAS_BMP:
+			pbmi = CreateBitmapInfoStruct(hWnd, ds.hBitmap);
+			hdc = GetDC(hWnd);
+			_tcscpy(filename, SaveFile());
+			CreateBMPFile(hWnd,filename, pbmi, ds.hBitmap, hdc);
+			ReleaseDC(hWnd, hdc);
+			break;
+		case IDM_OPEN_BMP:
+			hdc = GetDC(hWnd);
+			_tcscpy(filename, OpenFile());
+			ds.hBitmap = (HBITMAP)LoadImage(NULL, filename, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+			SelectObject(ds.hMemDc, ds.hBitmap);
+			BitBlt(hdc, 0, 0, ds.iWidth, ds.iHeight, ds.hMemDc, 0, 0, SRCCOPY);
+			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
@@ -249,7 +271,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-
+		SelectObject(ds.hMemDc, ds.hBitmap);
+		BitBlt(hdc, 0, 0, ds.iWidth, ds.iHeight, ds.hMemDc, 0, 0, SRCCOPY);
 		for (vector<int>::size_type i = 0; i < vec.size(); i++){
 			switch (vec[i].drawType)
 			{
@@ -343,6 +366,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
+		ReleaseDC(hWnd, ds.hMemDc);
 		PostQuitMessage(0);
 		break;
 	case WM_CREATE:
@@ -368,6 +392,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//类型栏
 		bStyleBoxIsDock = FALSE;
 		hWndStyle = CreateStyleBox(hInst, hWnd, bStyleBoxIsDock);
+
+		//save
+		ds.iWidth = 1800;
+		ds.iHeight = 1000;
+		hdc = GetDC(hWnd);
+		ds.hMemDc = CreateCompatibleDC(hdc);
+		ds.hBitmap = CreateCompatibleBitmap(hdc, ds.iWidth, ds.iHeight);
+		SelectObject(ds.hMemDc, ds.hBitmap);
+		SelectObject(ds.hMemDc, GetStockObject(WHITE_BRUSH));
+		SelectObject(ds.hMemDc, GetStockObject(WHITE_PEN));
+		Rectangle(ds.hMemDc, 0, 0, ds.iWidth + 1, ds.iHeight + 1);
+		SelectObject(ds.hMemDc, GetStockObject(WHITE_BRUSH));
+		SelectObject(ds.hMemDc, GetStockObject(BLACK_PEN));
 		break;
 	case WM_CHANGE_COLOR:
 		color = (COLORREF)lParam;
