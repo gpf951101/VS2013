@@ -74,10 +74,20 @@ LRESULT CALLBACK WndColorBoxProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	HDC hdc;
 	int i;
 	HWND hWndColor;
-	static COLORREF aColor[6] = {
-		RGB(0, 0, 0), RGB(255, 0, 0),
-		RGB(0, 255, 0), RGB(0, 0, 255),
-		RGB(255, 255, 0), RGB(255, 0, 255),
+	static COLORREF aColor[24] = {
+		RGB(0, 0, 0),
+		RGB(192, 192, 192), RGB(128, 128, 128),
+		RGB(255, 0, 0), RGB(128, 0, 0),
+		RGB(255, 255, 0), RGB(128, 128, 0),
+		RGB(0, 255, 0), RGB(0, 128, 0),
+		RGB(0, 255, 255), RGB(0, 128, 128),
+		RGB(0, 0, 255), RGB(0, 0, 128),
+		RGB(255, 0, 255), RGB(128, 0, 128),
+		RGB(255, 255, 128), RGB(128, 128, 64),
+		RGB(0, 255, 128), RGB(0, 64, 64),
+		RGB(128, 255, 255), RGB(0, 128, 255),
+		RGB(128, 128, 255), RGB(0, 64, 128),
+		RGB(255, 0, 128)
 	};
 	static HWND hWndSendTo;
 	switch (message)
@@ -87,11 +97,19 @@ LRESULT CALLBACK WndColorBoxProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			->lpCreateParams);
 		HINSTANCE hInsthWnd;
 		hInsthWnd = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
-		for (i = 0; i < 5; i++)
+		for (i = 0; i < 24; i++)
 		{
-			hWndColor = CreateWindow(szColorBtnClass, NULL,
-				WS_CHILD, i * 40, 0, 40, 40, hWnd, NULL, hInsthWnd, (LPVOID)aColor[i]);
-			ShowWindow(hWndColor, SW_NORMAL);
+			if (i < 12){
+				hWndColor = CreateWindow(szColorBtnClass, NULL,
+					WS_CHILD, i * 40, 0, 40, 40, hWnd, NULL, hInsthWnd, (LPVOID)aColor[i]);
+				ShowWindow(hWndColor, SW_NORMAL);
+			}
+			else{
+				hWndColor = CreateWindow(szColorBtnClass, NULL,
+					WS_CHILD, (i - 12) * 40, 40, 40, 40, hWnd, NULL, hInsthWnd, (LPVOID)aColor[i]);
+				ShowWindow(hWndColor, SW_NORMAL);
+			}
+			
 		}
 		break;
 	case WM_PAINT:
@@ -115,7 +133,7 @@ HWND CreateColorBox(HINSTANCE hInst, HWND hWnd, BOOL isDock)
 	HWND hWndColorBox;
 	if (isDock)
 	{
-		SetRect(&rt, 0, 0, 200, 40);
+		SetRect(&rt, 0, 0, 480, 80);
 		AdjustWindowRect(&rt, WS_CHILD | WS_VISIBLE | WS_BORDER, false);
 		hWndColorBox =
 			CreateWindow(szColorBoxClass,
@@ -127,8 +145,8 @@ HWND CreateColorBox(HINSTANCE hInst, HWND hWnd, BOOL isDock)
 	else
 	{
 
-		pt1.x = 400, pt1.y = 0;
-		pt2.x = 600, pt2.y = 40;
+		pt1.x = 200, pt1.y = 0;
+		pt2.x = 680, pt2.y = 80;
 		ClientToScreen(hWnd, &pt1);
 		ClientToScreen(hWnd, &pt2);
 
