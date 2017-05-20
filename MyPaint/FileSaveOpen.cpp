@@ -32,7 +32,7 @@ TCHAR* SaveFile()
 		return filename;
 	}
 	else{
-		return NULL;
+		return TEXT("");
 	}
 }
 
@@ -62,5 +62,5 @@ TCHAR * OpenFile()
 		return szFile;
 	}
 else
-	return NULL;
+	return TEXT("");
 }

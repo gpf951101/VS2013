@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "DrawStyle.h"
 #include <windowsx.h>
+#include <winuser.h>
 
 //重绘
 vector<node> vec;
@@ -455,7 +456,7 @@ VOID CutMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN h
 	HDC hdc;
 	if (pDs->bMouseDown)
 	{
-		hdc = GetDC(hWnd);
+		hdc = GetDC(GetDesktopWindow());
 		SetROP2(hdc, R2_NOTXORPEN);
 		HPEN newHpen = CreatePen(PS_SOLID, 1, color);
 		SelectObject(hdc, newHpen);
@@ -472,7 +473,9 @@ VOID CutMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPe
 	HDC hdc;
 	pDs->bMouseDown = FALSE;
 	ReleaseCapture();
-	hdc = GetDC(hWnd);
+	//hdc = GetDC(GetDesktopWindow());
+	//hdc = GetWindowDC(NULL);
+	hdc = GetDC(NULL);	
 	HDC hDcMem = CreateCompatibleDC(hdc);
 	SetROP2(hdc, R2_NOTXORPEN);
 	HPEN newHpen = CreatePen(PS_SOLID, 1, color);
@@ -494,13 +497,39 @@ VOID CutMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPe
 	BitBlt(hDcMem, 0, 0, cutbmp.pt2.x-cutbmp.pt1.x, cutbmp.pt2.y-cutbmp.pt1.y, hdc, pDs->ptStart.x, pDs->ptStart.y, SRCCOPY);
 	PBITMAPINFO pbmi = CreateBitmapInfoStruct(hWnd, hBitmap);
 	_tcscpy(filename, SaveFile());
-	CreateBMPFile(hWnd, filename, pbmi, hBitmap, hDcMem);
+	if (_tcscmp(filename, L"") != 0){
+		CreateBMPFile(hWnd, filename, pbmi, hBitmap, hDcMem);
+	}
+
 
 
 	DeleteObject(newHpen);
 	DeleteObject(hBrush);
-	ReleaseDC(hWnd, hdc);
+	ReleaseDC(NULL, hdc);
 
 	/*tempNode.pt2 = pDs->ptEnd;
 	vec.push_back(tempNode);*/
+}
+
+//-------------
+//设置窗体透明
+//-------------
+void Transparent(HWND hWnd, int cd)
+{
+	SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | 0x00080000);
+	HINSTANCE hUser32 = LoadLibrary(TEXT("user32.DLL"));
+	if (hUser32)
+	{
+		typedef BOOL(WINAPI * MYFUNC)(HWND, COLORREF, BYTE, DWORD);
+		MYFUNC fun = NULL;
+
+		//取得SetLayeredWindowAttributes函数指针
+		fun = (MYFUNC)GetProcAddress(hUser32, "SetLayeredWindowAttributes");
+		if (fun)
+		{
+			COLORREF maskColor = RGB(244, 244, 244);	//要透明的颜色
+			fun(hWnd, maskColor, cd, 0x00000002);   //最后一个参数取1则完全透明，取2则再过第三个参数调节透明度
+		}
+		FreeLibrary(hUser32);
+	}
 }
