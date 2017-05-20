@@ -159,7 +159,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	int tempIwidth = 0;
 	HPEN tempHpen;
-
+	RECT rt;
 	//save
 	PBITMAPINFO pbmi;
 	HBITMAP hBitmap = NULL;
@@ -271,8 +271,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-		SelectObject(ds.hMemDc, ds.hBitmap);
-		BitBlt(hdc, 0, 0, ds.iWidth, ds.iHeight, ds.hMemDc, 0, 0, SRCCOPY);
+		/*SelectObject(ds.hMemDc, ds.hBitmap);
+		BitBlt(hdc, 0, 0, ds.iWidth, ds.iHeight, ds.hMemDc, 0, 0, SRCCOPY);*/
 		for (vector<int>::size_type i = 0; i < vec.size(); i++){
 			switch (vec[i].drawType)
 			{
@@ -394,8 +394,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hWndStyle = CreateStyleBox(hInst, hWnd, bStyleBoxIsDock);
 
 		//save
-		ds.iWidth = 1800;
-		ds.iHeight = 1000;
+		GetClientRect(hWnd, &rt);
+		ds.iWidth = rt.right-rt.left;
+		ds.iHeight = rt.bottom - rt.top;
 		hdc = GetDC(hWnd);
 		ds.hMemDc = CreateCompatibleDC(hdc);
 		ds.hBitmap = CreateCompatibleBitmap(hdc, ds.iWidth, ds.iHeight);
@@ -405,6 +406,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		Rectangle(ds.hMemDc, 0, 0, ds.iWidth + 1, ds.iHeight + 1);
 		SelectObject(ds.hMemDc, GetStockObject(WHITE_BRUSH));
 		SelectObject(ds.hMemDc, GetStockObject(BLACK_PEN));
+		break;
+	case WM_SIZE:
+		GetClientRect(hWnd, &rt);
+		ds.iWidth = rt.right - rt.left;
+		ds.iHeight = rt.bottom - rt.top;
 		break;
 	case WM_CHANGE_COLOR:
 		color = (COLORREF)lParam;
@@ -451,6 +457,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pMouseUp = EarserMouseUp;
 			pMouseMove = EarserMouseMove;
 			break;
+		case IDB_U_CUT:
+			pMouseDown = CutMouseDown;
+			pMouseUp = CutMouseUp;
+			pMouseMove = CutMouseMove;
+			break;;
 		default:
 			break;
 		}

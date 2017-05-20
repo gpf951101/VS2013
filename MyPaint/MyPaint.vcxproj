@@ -108,6 +108,8 @@
     <Image Include="bitmap1.bmp" />
     <Image Include="bitmap2.bmp" />
     <Image Include="MyPaint.ico" />
+    <Image Include="res\cut.bmp" />
+    <Image Include="res\cut2.bmp" />
     <Image Include="res\eraser.bmp" />
     <Image Include="res\eraser2.bmp" />
     <Image Include="res\tdcircle.bmp" />

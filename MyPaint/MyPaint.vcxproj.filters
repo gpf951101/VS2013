@@ -129,5 +129,11 @@
     <Image Include="res\eraser2.bmp">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="res\cut.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\cut2.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -2,6 +2,8 @@
 #include <vector>
 #include <algorithm>
 
+#include "FileSaveOpen.h"
+#include "SaveBmp.h"
 using namespace std;
 /*ªÊÕº*/
 typedef struct tagDrawStru
@@ -28,9 +30,17 @@ struct node{
 	int iwidth;
 };
 
+struct cutBmp
+{
+	POINT pt1;
+	POINT pt2;
+};
+
 //÷ÿªÊ
 extern vector<node> vec;
 extern node tempNode;
+
+extern cutBmp cutbmp;
 
 //ªÊÕº
 VOID LineMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth);
@@ -54,3 +64,6 @@ VOID FillEllipseMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam
 VOID EarserMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth);
 VOID EarserMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth);
 VOID EarserMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth);
+VOID CutMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth);
+VOID CutMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth);
+VOID CutMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth);
