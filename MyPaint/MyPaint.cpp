@@ -19,6 +19,7 @@ TCHAR szTitle[MAX_LOADSTRING];					// 标题栏文本
 TCHAR szWindowClass[MAX_LOADSTRING];			// 主窗口类名
 
 static int iWidth = 2;//线条宽度
+static TCHAR hotkey[2] = L"x";
 bool isBegin = false;
 bool isFinish = false;
 
@@ -29,6 +30,7 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK DlgProcIwidthInfo(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK DlgProcCut(HWND, UINT, WPARAM, LPARAM, HWND);
 BOOL WINAPI DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 HBITMAP CopyScreenToBitmap(LPRECT lpRect,HWND hWnd);
 
@@ -299,7 +301,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hdc = BeginPaint(hWnd, &ps);
 		SelectObject(ds.hMemDc, ds.hBitmap);
 		BitBlt(hdc, 0, 0, ds.iWidth, ds.iHeight, ds.hMemDc, 0, 0, SRCCOPY);
-		for (vector<int>::size_type i = 0; i < vec.size(); i++){
+		/*for (vector<int>::size_type i = 0; i < vec.size(); i++){
 			switch (vec[i].drawType)
 			{
 			case line:
@@ -388,7 +390,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			default:
 				break;
 			}
-		}
+		}*/
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
@@ -487,9 +489,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDB_U_CUT:
 			hwnd2 = CreateDialog(hInst, MAKEINTRESOURCE(IDD_DIALOG2), NULL, (DLGPROC)&DlgProc2);
 			ShowWindow(hwnd2, SW_MAXIMIZE);
-			/*pMouseDown = CutMouseDown;
+			pMouseDown = CutMouseDown;
 			pMouseUp = CutMouseUp;
-			pMouseMove = CutMouseMove;*/
+			pMouseMove = CutMouseMove;
 			break;;
 		default:
 			break;
@@ -576,8 +578,10 @@ BOOL WINAPI DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_RBUTTONDOWN:
-		if (isBegin == false)
+		if (isBegin == false){
+			isLeftDown = false;
 			EndDialog(hWnd, 0);
+		}
 		else
 		{
 			InvalidateRect(hWnd, NULL, TRUE);
@@ -585,7 +589,6 @@ BOOL WINAPI DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			isFinish = false;
 		}
 		break;
-
 	case WM_LBUTTONDOWN:			//左键按下
 		if (isFinish == false)		//避免双击截图时重新获取坐标
 		{
@@ -596,45 +599,40 @@ BOOL WINAPI DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			isLeftDown = true;
 		}
 		break;
-
 	case WM_LBUTTONUP:				//左键弹起
 		if (isBegin == true)			//有拖动才为true，说明矩形非空
 		{
 			isFinish = true;
 		}
 		break;
-
 	case WM_LBUTTONDBLCLK:
 	{
 		if (isFinish == true)	//如果已选取完成
 		{
-		RECT rect;
-		rect.left = (pointBegin.x < pointEnd.x) ? pointBegin.x : pointEnd.x;
-		rect.top = (pointBegin.y < pointEnd.y) ? pointBegin.y : pointEnd.y;
-		rect.right = (pointEnd.x > pointBegin.x) ? pointEnd.x : pointBegin.x;
-		rect.bottom = (pointEnd.y > pointBegin.y) ? pointEnd.y : pointBegin.y;
-
-		HBITMAP	 hBitmap;
-		hBitmap = CopyScreenToBitmap(&rect,hWnd);
-
-		if (OpenClipboard(hWnd))
-		{
-		//清空剪贴板
-		EmptyClipboard();
-
-		//把屏幕内容粘贴到剪贴板上
-		SetClipboardData(CF_BITMAP, hBitmap);
-
-		//关闭剪贴板
-			 CloseClipboard();
-		}
-		 isBegin = false;
-		 isFinish = false;
+			RECT rect;
+			rect.left = (pointBegin.x < pointEnd.x) ? pointBegin.x : pointEnd.x;
+			rect.top = (pointBegin.y < pointEnd.y) ? pointBegin.y : pointEnd.y;
+			rect.right = (pointEnd.x > pointBegin.x) ? pointEnd.x : pointBegin.x;
+			rect.bottom = (pointEnd.y > pointBegin.y) ? pointEnd.y : pointBegin.y;
+			HBITMAP	 hBitmap;
+			hBitmap = CopyScreenToBitmap(&rect,hWnd);
+			if (OpenClipboard(hWnd))
+			{
+				//清空剪贴板
+				EmptyClipboard();
+				//把屏幕内容粘贴到剪贴板上
+				SetClipboardData(CF_BITMAP, hBitmap);
+				//关闭剪贴板
+				CloseClipboard();
+			}
+			isBegin = false;
+			isFinish = false;
+			isLeftDown = false;
 		}
 	EndDialog(hWnd, 0);
+	
 	}
-		break;
-
+	break;
 	case WM_MOUSEMOVE:					//进入鼠标移动消息
 		if (wParam & MK_LBUTTON)			//检测左键是否按下
 		{
@@ -697,7 +695,6 @@ HBITMAP CopyScreenToBitmap(LPRECT lpRect, HWND hWnd)
 	nY = lpRect->top;
 	nX2 = lpRect->right;
 	nY2 = lpRect->bottom;
-
 	//获得屏幕分辨率
 	xScrn = GetDeviceCaps(hScrDC, HORZRES);
 	yScrn = GetDeviceCaps(hScrDC, VERTRES);
@@ -705,16 +702,12 @@ HBITMAP CopyScreenToBitmap(LPRECT lpRect, HWND hWnd)
 	//确保选定区域是可见的
 	if (nX < 0)
 		nX = 0;
-
 	if (nY < 0)
 		nY = 0;
-
 	if (nX2 > xScrn)
 		nX2 = xScrn;
-
 	if (nY2 > yScrn)
 		nY2 = yScrn;
-
 	nWidth = nX2 - nX;
 	nHeight = nY2 - nY;
 
@@ -729,6 +722,7 @@ HBITMAP CopyScreenToBitmap(LPRECT lpRect, HWND hWnd)
 
 	//得到屏幕位图的句柄
 	hBitmap = (HBITMAP)SelectObject(hMemDC, hOldBitmap);
+	
 	TCHAR filename[260] = TEXT("");
 	PBITMAPINFO pbmi = CreateBitmapInfoStruct(hWnd, hBitmap);
 	HDC hdc = GetDC(hWnd);
@@ -740,8 +734,7 @@ HBITMAP CopyScreenToBitmap(LPRECT lpRect, HWND hWnd)
 	//清除
 	DeleteDC(hScrDC);
 	DeleteDC(hMemDC);
-
+	DeleteDC(hdc);
 	//   返回位图句柄
 	return   hBitmap;
 }
-

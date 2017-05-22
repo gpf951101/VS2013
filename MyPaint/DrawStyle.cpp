@@ -40,8 +40,7 @@ VOID LineMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hP
 	SetROP2(hdc, R2_COPYPEN);
 	MoveToEx(hdc, pDs->ptStart.x, pDs->ptStart.y, NULL);
 	LineTo(hdc, pDs->ptEnd.x, pDs->ptEnd.y);
-	DeleteObject(newHpen);
-	ReleaseDC(hWnd, hdc);
+
 
 	SelectObject(pDs->hMemDc, GetStockObject(NULL_BRUSH));
 	SelectObject(pDs->hMemDc, newHpen);
@@ -50,6 +49,8 @@ VOID LineMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hP
 	
 	tempNode.pt2 = pDs->ptEnd;
 	vec.push_back(tempNode);
+	DeleteObject(newHpen);
+	ReleaseDC(hWnd, hdc);
 }
 VOID LineMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth)
 {
@@ -119,9 +120,6 @@ VOID RectMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hP
 	HBRUSH hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
 	SelectObject(hdc, hBrush);
 	Rectangle(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
-	DeleteObject(newHpen);
-	DeleteObject(hBrush);
-	ReleaseDC(hWnd, hdc);
 
 	SelectObject(pDs->hMemDc, GetStockObject(NULL_BRUSH));
 	SelectObject(pDs->hMemDc, newHpen);
@@ -129,6 +127,10 @@ VOID RectMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hP
 
 	tempNode.pt2 = pDs->ptEnd;
 	vec.push_back(tempNode);
+
+	DeleteObject(newHpen);
+	DeleteObject(hBrush);
+	ReleaseDC(hWnd, hdc);
 }
 
 VOID EllipseMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth)
@@ -161,9 +163,6 @@ VOID EllipseMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN
 	HBRUSH hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
 	SelectObject(hdc, hBrush);
 	Ellipse(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
-	DeleteObject(newHpen);
-	DeleteObject(hBrush);
-	ReleaseDC(hWnd, hdc);
 
 	SelectObject(pDs->hMemDc, GetStockObject(NULL_BRUSH));
 	SelectObject(pDs->hMemDc, newHpen);
@@ -171,6 +170,9 @@ VOID EllipseMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN
 
 	tempNode.pt2 = pDs->ptEnd;
 	vec.push_back(tempNode);
+	DeleteObject(newHpen);
+	DeleteObject(hBrush);
+	ReleaseDC(hWnd, hdc);
 }
 VOID EllipseMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth)
 {
@@ -438,79 +440,15 @@ VOID EarserMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPE
 
 VOID CutMouseDown(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth)
 {
-	pDs->ptStart.x = GET_X_LPARAM(lParam);
-	pDs->ptStart.y = GET_Y_LPARAM(lParam);
-
-	/*tempNode.pt1 = pDs->ptStart;
-	tempNode.color = color;
-	tempNode.drawType = rect;
-	tempNode.iwidth = iwidth;*/
-
-	pDs->ptEnd.x = pDs->ptStart.x;
-	pDs->ptEnd.y = pDs->ptStart.y;
-	pDs->bMouseDown = TRUE;
-	SetCapture(hWnd);
+	
 }
 VOID CutMouseMove(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth)
 {
-	HDC hdc;
-	if (pDs->bMouseDown)
-	{
-		hdc = GetDC(GetDesktopWindow());
-		SetROP2(hdc, R2_NOTXORPEN);
-		HPEN newHpen = CreatePen(PS_SOLID, 1, color);
-		SelectObject(hdc, newHpen);
-		Rectangle(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
-		pDs->ptEnd.x = GET_X_LPARAM(lParam);
-		pDs->ptEnd.y = GET_Y_LPARAM(lParam);
-		Rectangle(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
-		DeleteObject(newHpen);
-		ReleaseDC(hWnd, hdc);
-	}
+	
 }
 VOID CutMouseUp(PDRAWSTRU pDs, HWND hWnd, WPARAM wParam, LPARAM lParam, HPEN hPen, COLORREF color, int iwidth)
 {
-	HDC hdc;
-	pDs->bMouseDown = FALSE;
-	ReleaseCapture();
-	//hdc = GetDC(GetDesktopWindow());
-	//hdc = GetWindowDC(NULL);
-	hdc = GetDC(NULL);	
-	HDC hDcMem = CreateCompatibleDC(hdc);
-	SetROP2(hdc, R2_NOTXORPEN);
-	HPEN newHpen = CreatePen(PS_SOLID, 1, color);
-	SelectObject(hdc, newHpen);
-	Rectangle(hdc, pDs->ptStart.x, pDs->ptStart.y, pDs->ptEnd.x, pDs->ptEnd.y);
-	pDs->ptEnd.x = GET_X_LPARAM(lParam);
-	pDs->ptEnd.y = GET_Y_LPARAM(lParam);
-	SetROP2(hDcMem, R2_COPYPEN);
-	HBRUSH hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-	
-	cutbmp.pt1 = pDs->ptStart;
-	cutbmp.pt2 = pDs->ptEnd;
-
-	HINSTANCE hInst;
-	hInst = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
-	HBITMAP hBitmap = CreateCompatibleBitmap(hdc, cutbmp.pt2.x - cutbmp.pt1.x, cutbmp.pt2.y - cutbmp.pt1.y);
-	TCHAR filename[260] = TEXT("");
-	SelectObject(hDcMem, hBitmap);
-	BitBlt(hDcMem, 0, 0, cutbmp.pt2.x-cutbmp.pt1.x, cutbmp.pt2.y-cutbmp.pt1.y, hdc, pDs->ptStart.x, pDs->ptStart.y, SRCCOPY);
-	PBITMAPINFO pbmi = CreateBitmapInfoStruct(hWnd, hBitmap);
-	_tcscpy(filename, SaveFile());
-	if (_tcscmp(filename, L"") != 0){
-		CreateBMPFile(hWnd, filename, pbmi, hBitmap, hDcMem);
-	}
-
-
-
-	DeleteObject(newHpen);
-	DeleteObject(hBrush);
-	ReleaseDC(NULL, hdc);
-
-	/*tempNode.pt2 = pDs->ptEnd;
-	vec.push_back(tempNode);*/
 }
-
 //-------------
 //ÉèÖÃ´°ÌåÍ¸Ã÷
 //-------------

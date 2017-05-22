@@ -40,15 +40,12 @@ TCHAR * OpenFile()
 {
 	OPENFILENAME ofn;// common dialog box structure
 	TCHAR szFile[MAX_PATH];// buffer for file name
-	// Initialize OPENFILENAME
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = NULL;
 	ofn.lpstrFile = szFile;
 	ofn.lpstrFile[0] = '\0';//
-	// Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
-	// use the contents of szFile to initialize itself.
-	//
+
 	ofn.nMaxFile = sizeof(szFile);
 	ofn.lpstrFilter = _T("Text files (*.bmp)\0*.bmp\0\0");
 	ofn.nFilterIndex = 1;
